@@ -1,0 +1,63 @@
+# docker-compose.yaml
+version: "3.7"
+
+services:
+  app:
+    build: .
+    container_name: mayapada
+    ports:
+      - 8080:8080
+    restart: on-failure
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - api:/usr/src/app/
+    networks:
+      - fullstack
+
+  mysql:
+    image: mysql:latest
+    platform: linux/amd64 
+    container_name: mayapada_mysql    
+    ports:
+      - 3307:3306
+    environment:
+      - MYSQL_DATABASE=mayapada
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - database_mysql:/var/lib/mysql
+    networks:
+      - fullstack
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin_container
+    depends_on:
+      - mysql
+    environment:
+      - PMA_HOST=mysql 
+      - PMA_USER=user
+      - PMA_PORT=3306
+      - PMA_PASSWORD=password
+    ports:
+      - 9090:80
+    restart: always
+    networks:
+      - fullstack
+
+volumes:
+  api:
+  database_mysql:                  
+
+# Networks to be created to facilitate communication between containers
+networks:
+  fullstack:
+    driver: bridge
+
